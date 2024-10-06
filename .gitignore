@@ -1,6 +1,7 @@
 .*/*
 !.github/*
 !.vscode/settings.json
+!.vscode/launch.json
 !.devcontainer/devcontainer.json
 
 .idea
