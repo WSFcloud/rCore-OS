@@ -1,0 +1,38 @@
+{
+	// 使用 IntelliSense 了解相关属性。 
+	// 悬停以查看现有属性的描述。
+	// 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug",
+			"type": "cppdbg",
+			"request": "launch",
+			// 注意要修改为自己的目标文件路径
+			"program": "${workspaceFolder}/os/target/riscv64gc-unknown-none-elf/release/os",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"setupCommands": [
+				{
+					"description": "为 gdb 启用整齐打印",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				},
+				{
+					"description": "Set architecture to riscv:rv64",
+					"text": "set arch riscv:rv64",
+					"ignoreFailures": false
+				},
+			],
+			// RISC-V工具链中的gdb
+			"miDebuggerPath": "gdb-multiarch", 
+			// gdb server 的地址端口
+			"miDebuggerServerAddress": "127.0.0.1:1234" 
+		}
+	]
+	
+}
