@@ -8,7 +8,6 @@
 			"name": "Debug",
 			"type": "cppdbg",
 			"request": "launch",
-			// 注意要修改为自己的目标文件路径
 			"program": "${workspaceFolder}/os/target/riscv64gc-unknown-none-elf/release/os",
 			"args": [],
 			"stopAtEntry": false,
@@ -28,10 +27,9 @@
 					"ignoreFailures": false
 				},
 			],
-			// RISC-V工具链中的gdb
-			"miDebuggerPath": "gdb-multiarch", 
-			// gdb server 的地址端口
-			"miDebuggerServerAddress": "127.0.0.1:1234" 
+			"miDebuggerPath": "gdb-multiarch",
+			"miDebuggerServerAddress": "127.0.0.1:1234",
+			"preLaunchTask": "build-gdb"
 		}
 	]
 	
