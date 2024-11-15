@@ -13,7 +13,7 @@ RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && \
     wget curl jq git python3 build-essential strace \
     man psmisc file libreadline-dev \
     libglib2.0-0 libfdt1 libpixman-1-0 zlib1g \
-    gdb-multiarch qemu-system
+    gdb-multiarch qemu-system qemu-user
 
 # Install Rust
 # - https://www.rust-lang.org/tools/install
