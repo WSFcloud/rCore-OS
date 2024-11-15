@@ -1,17 +1,31 @@
 # syntax=docker/dockerfile:1
 
-#Set Lab Environment
-FROM debian:bookworm as build
+#Set Environment
+FROM debian:bookworm AS build
 
 WORKDIR /tmp
 
+
+# Modify apt sources
+RUN cat <<EOF > /etc/apt/sources.list.d/debian.sources
+Types: deb
+URIs: http://mirrors.ustc.edu.cn/debian
+Suites: bookworm bookworm-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: http://mirrors.ustc.edu.cn/debian-security
+Suites: bookworm-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+
 # Install general tools
-RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && \
-    sed -i 's/security.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && \
-    apt-get update && \
+RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     wget curl jq git python3 build-essential strace \
-    man psmisc file libreadline-dev \
+    vim man psmisc file libreadline-dev \
     libglib2.0-0 libfdt1 libpixman-1-0 zlib1g \
     gdb-multiarch qemu-system qemu-user
 
@@ -41,6 +55,7 @@ RUN ln -s /usr/bin/gdb-multiarch /usr/bin/riscv64-unknown-elf-gdb
 
 # Stage 3 Sanity checking
 RUN qemu-system-riscv64 --version && \
+    qemu-riscv64 --version && \
     rustup --version && \
     cargo --version && \
     rustc --version && \
