@@ -3,9 +3,7 @@
   "build": {
     "dockerfile": "../Dockerfile",
     "args": {
-      "QEMU_VERSION": "7.0.0",
-      "DEBIAN_FRONTEND": "noninteractive",
-      "GDB_VERSION": "14.1"
+      "DEBIAN_FRONTEND": "noninteractive"
     }
   },
   "postCreateCommand": "rustup show",

@@ -1,0 +1,49 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "label": "clean",
+            "command": "cd ${workspaceFolder}/os; make clean",
+            "type": "shell"
+        },
+        {
+            "label": "build",
+            "command": "cd ${workspaceFolder}/os; make -j",
+            "args": [],
+            "type": "shell"
+        },
+        {
+            "label": "gdbserver",
+            "command": "cd ${workspaceFolder}/os; make gdbserver",
+            "args": [],
+            "type": "shell",
+			"problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": ".",
+                            "file": 1,
+                            "location": 2,
+                            "message": 3
+                        }
+                    ],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".",
+                        "endsPattern": ".",
+                    }
+                }
+            ],
+			"isBackground": true
+        },
+        {
+            "label": "build-gdb",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "clean",
+                "build",
+                "gdbserver"
+            ]
+        }
+	]
+}
