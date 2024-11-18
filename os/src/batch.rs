@@ -130,6 +130,11 @@ pub fn print_app_info() {
     APP_MANAGER.exclusive_access().print_app_info();
 }
 
+/// export current app pid
+pub fn get_current_app_pid() -> usize {
+    APP_MANAGER.exclusive_access().get_current_app()
+}
+
 /// run next app
 pub fn run_next_app() -> ! {
     let mut app_manager = APP_MANAGER.exclusive_access();
