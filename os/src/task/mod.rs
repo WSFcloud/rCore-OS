@@ -19,6 +19,7 @@ use crate::config::MAX_APP_NUM;
 use crate::loader::{get_num_app, init_app_cx};
 use crate::sbi::shutdown;
 use crate::sync::UPSafeCell;
+use crate::timer::get_time_ms;
 use lazy_static::*;
 use switch::__switch;
 use task::{TaskControlBlock, TaskStatus};
@@ -47,6 +48,16 @@ pub struct TaskManagerInner {
     tasks: [TaskControlBlock; MAX_APP_NUM],
     /// id of current `Running` task
     current_task: usize,
+    /// stop watch
+    stop_watch: usize,
+}
+
+impl TaskManagerInner {
+    fn refresh_stop_watch(&mut self) -> usize {
+        let start_time = self.stop_watch;
+        self.stop_watch = get_time_ms();
+        self.stop_watch - start_time
+    }
 }
 
 lazy_static! {
@@ -56,6 +67,8 @@ lazy_static! {
         let mut tasks = [TaskControlBlock {
             task_cx: TaskContext::zero_init(),
             task_status: TaskStatus::UnInit,
+            user_time: 0,
+            kernel_time: 0,
         }; MAX_APP_NUM];
         for (i, task) in tasks.iter_mut().enumerate() {
             task.task_cx = TaskContext::goto_restore(init_app_cx(i));
@@ -67,6 +80,7 @@ lazy_static! {
                 UPSafeCell::new(TaskManagerInner {
                     tasks,
                     current_task: 0,
+                    stop_watch: 0,
                 })
             },
         }
@@ -83,6 +97,8 @@ impl TaskManager {
         let task0 = &mut inner.tasks[0];
         task0.task_status = TaskStatus::Running;
         let next_task_cx_ptr = &task0.task_cx as *const TaskContext;
+        // start recording time
+        inner.refresh_stop_watch();
         drop(inner);
         let mut _unused = TaskContext::zero_init();
         // before this, we should drop local variables that must be dropped manually
@@ -96,6 +112,9 @@ impl TaskManager {
     fn mark_current_suspended(&self) {
         let mut inner = self.inner.exclusive_access();
         let current = inner.current_task;
+        // statistics kernel time
+        inner.tasks[current].kernel_time += inner.refresh_stop_watch();
+        inner.tasks[current].task_status = TaskStatus::Ready;
         inner.tasks[current].task_status = TaskStatus::Ready;
     }
 
@@ -103,6 +122,12 @@ impl TaskManager {
     fn mark_current_exited(&self) {
         let mut inner = self.inner.exclusive_access();
         let current = inner.current_task;
+        // count kernel time and print
+        inner.tasks[current].kernel_time += inner.refresh_stop_watch();
+        println!(
+            "[task {} exited. user_time: {} ms, kernle_time: {} ms.",
+            current, inner.tasks[current].user_time, inner.tasks[current].kernel_time
+        );
         inner.tasks[current].task_status = TaskStatus::Exited;
     }
 
@@ -138,6 +163,20 @@ impl TaskManager {
             shutdown(false);
         }
     }
+
+    /// count kernel time, from now on it will be user time
+    fn user_time_start(&self) {
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].kernel_time += inner.refresh_stop_watch();
+    }
+
+    /// count user time, from now on it will be kernel time
+    fn user_time_end(&self) {
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].user_time += inner.refresh_stop_watch();
+    }
 }
 
 /// run first task
@@ -170,4 +209,14 @@ pub fn suspend_current_and_run_next() {
 pub fn exit_current_and_run_next() {
     mark_current_exited();
     run_next_task();
+}
+
+/// count kernel time, from now on it will be user time
+pub fn user_time_start() {
+    TASK_MANAGER.user_time_start()
+}
+
+/// count user time, from now on it will be kernel time
+pub fn user_time_end() {
+    TASK_MANAGER.user_time_end()
 }
