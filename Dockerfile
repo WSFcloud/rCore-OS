@@ -24,10 +24,10 @@ EOF
 # Install general tools
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    wget curl jq git python3 build-essential strace \
+    wget curl jq git python3 python3-pip build-essential strace \
     vim man psmisc file libreadline-dev \
     libglib2.0-0 libfdt1 libpixman-1-0 zlib1g \
-    gdb-multiarch qemu-system qemu-user
+    gdb-multiarch qemu-system qemu-user qemu-system-misc
 
 # Install Rust
 # - https://www.rust-lang.org/tools/install
