@@ -37,6 +37,7 @@ pub mod syscall;
 pub mod task;
 mod timer;
 pub mod trap;
+mod stack_trace;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("link_app.S"));
