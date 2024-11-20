@@ -1,245 +1,124 @@
-# rCore-Tutorial-v3
+# rCore-OS
 
+## Running environment
+Use the provided Dockerfile to get the running environment.
 
-If you don't know  Rust Language and try to learn it, please visit [Rust Learning Resources](https://github.com/rcore-os/rCore/wiki/study-resource-of-system-programming-in-RUST)
+Make sure you have the following software installed:
+- Docker: Verify the installation by running docker --version.
+- Docker Compose (if needed): Verify the installation by running docker-compose --version.
 
-
-
-## Overview
-
-This project aims to show how to write an **Unix-like OS** running on **RISC-V** platforms **from scratch** in **[Rust](https://www.rust-lang.org/)** for **beginners** without any background knowledge about **computer architectures, assembly languages or operating systems**.
-
-## Features
-
-* Platform supported: `qemu-system-riscv64` simulator or dev boards based on [Kendryte K210 SoC](https://canaan.io/product/kendryteai) such as [Maix Dock](https://www.seeedstudio.com/Sipeed-MAIX-Dock-p-4815.html)
-* OS
-  * concurrency of multiple processes each of which contains mutiple native threads
-  * preemptive scheduling(Round-Robin algorithm)
-  * dynamic memory management in kernel
-  * virtual memory
-  * a simple file system with a block cache
-  * an interactive shell in the userspace
-* **only 4K+ LoC**
-* [A detailed documentation in Chinese](https://rcore-os.github.io/rCore-Tutorial-Book-v3/) in spite of the lack of comments in the code(English version is not available at present)
-
-## Prerequisites
-
-### Install Rust
-
-See [official guide](https://www.rust-lang.org/tools/install).
-
-Install some tools:
-
-```sh
-$ rustup target add riscv64gc-unknown-none-elf
-$ cargo install cargo-binutils --vers =0.3.3
-$ rustup component add llvm-tools-preview
-$ rustup component add rust-src
+Run the following command in the terminal to build the image:
+```bash
+docker build -t rcore_env .
 ```
+- -t rcore_env specifies the name of the image (you can customize it).
+- . refers to the current directory as the build context.
 
-### Install Qemu
-
-Here we manually compile and install Qemu 7.0.0. For example, on Ubuntu 18.04:
-
-```sh
-# install dependency packages
-$ sudo apt install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev \
-              gawk build-essential bison flex texinfo gperf libtool patchutils bc \
-              zlib1g-dev libexpat-dev pkg-config  libglib2.0-dev libpixman-1-dev git tmux python3 python3-pip
-# download Qemu source code
-$ wget https://download.qemu.org/qemu-7.0.0.tar.xz
-# extract to qemu-7.0.0/
-$ tar xvJf qemu-7.0.0.tar.xz
-$ cd qemu-7.0.0
-# build
-$ ./configure --target-list=riscv64-softmmu,riscv64-linux-user
-$ make -j$(nproc)
+After building the image, start a container with the runtime environment:
+```bash
+docker run -it --name rcore_container rcore_env
 ```
-
-Then, add following contents to `~/.bashrc`(please adjust these paths according to your environment):
-
-```
-export PATH=$PATH:/home/shinbokuow/Downloads/built/qemu-7.0.0
-export PATH=$PATH:/home/shinbokuow/Downloads/built/qemu-7.0.0/riscv64-softmmu
-export PATH=$PATH:/home/shinbokuow/Downloads/built/qemu-7.0.0/riscv64-linux-user
-```
-
-Finally, update the current shell:
-
-```sh
-$ source ~/.bashrc
-```
-
-Now we can check the version of Qemu:
-
-```sh
-$ qemu-system-riscv64 --version
-QEMU emulator version 7.0.0
-Copyright (c) 2003-2020 Fabrice Bellard and the QEMU Project developers
-```
-
-### Install RISC-V GNU Embedded Toolchain(including GDB)
-
-Download the compressed file according to your platform From [Sifive website](https://www.sifive.com/software)(Ctrl+F 'toolchain').
-
-Extract it and append the location of the 'bin' directory under its root directory to `$PATH`.
-
-For example, we can check the version of GDB:
-
-```sh
-$ riscv64-unknown-elf-gdb --version
-GNU gdb (SiFive GDB-Metal 10.1.0-2020.12.7) 10.1
-Copyright (C) 2020 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.
-```
-
-### Install serial tools(Optional, if you want to run on K210)
-
-```sh
-$ pip3 install pyserial
-$ sudo apt install python3-serial
-```
-
-## Run our project
-
-### Qemu
-
-```sh
-$ git clone https://github.com/rcore-os/rCore-Tutorial-v3.git
-$ cd rCore-Tutorial-v3/os
-$ make run
-```
-
-After outputing some debug messages, the kernel lists all the applications available and enter the user shell:
-
-```
-/**** APPS ****
-mpsc_sem
-usertests
-pipetest
-forktest2
-cat
-initproc
-race_adder_loop
-threads_arg
-race_adder_mutex_spin
-race_adder_mutex_blocking
-forktree
-user_shell
-huge_write
-race_adder
-race_adder_atomic
-threads
-stack_overflow
-filetest_simple
-forktest_simple
-cmdline_args
-run_pipe_test
-forktest
-matrix
-exit
-fantastic_text
-sleep_simple
-yield
-hello_world
-pipe_large_test
-sleep
-phil_din_mutex
-**************/
-Rust user shell
->> 
-```
-
-You can run any application except for `initproc` and `user_shell` itself. To run an application, just input its filename and hit enter. `usertests` can run a bunch of applications, thus it is recommended.
-
-Type `Ctrl+a` then `x` to exit Qemu.
-
-### K210
-
-Before chapter 6, you do not need a SD card:
-
-```sh
-$ git clone https://github.com/rcore-os/rCore-Tutorial-v3.git
-$ cd rCore-Tutorial-v3/os
-$ make run BOARD=k210
-```
-
-From chapter 6, before running the kernel, we should insert a SD card into PC and manually write the filesystem image to it:
-
-```sh
-$ cd rCore-Tutorial-v3/os
-$ make sdcard
-```
-
-By default it will overwrite the device `/dev/sdb` which is the SD card, but you can provide another location. For example, `make sdcard SDCARD=/dev/sdc`.
-
-After that, remove the SD card from PC and insert it to the slot of K210. Connect the K210 to PC and then:
-
-```sh
-$ git clone https://github.com/rcore-os/rCore-Tutorial-v3.git
-$ cd rCore-Tutorial-v3/os
-$ make run BOARD=k210
-```
-
-Type `Ctrl+]` to disconnect from K210.
 
 
 ## Show runtime debug info of OS kernel version
-The branch of ch9-log contains a lot of debug info. You could try to run rcore tutorial 
-for understand the internal behavior of os kernel.
+You could try to run rcore for understand the internal behavior of os kernel.
+
+You can also add the parameter LOG=ERROR/WARN/INFO/DEBUG/TRACE to view logs of different levels.
 
 ```sh
-$ git clone https://github.com/rcore-os/rCore-Tutorial-v3.git
-$ cd rCore-Tutorial-v3/os
-$ git checkout ch9-log
+$ cd /os
 $ make run
 ......
-[rustsbi] RustSBI version 0.2.0-alpha.10, adapting to RISC-V SBI v0.3
+[rustsbi] RustSBI version 0.3.1, adapting to RISC-V SBI v1.0.0
 .______       __    __      _______.___________.  _______..______   __
 |   _  \     |  |  |  |    /       |           | /       ||   _  \ |  |
 |  |_)  |    |  |  |  |   |   (----`---|  |----`|   (----`|  |_)  ||  |
 |      /     |  |  |  |    \   \       |  |      \   \    |   _  < |  |
 |  |\  \----.|  `--'  |.----)   |      |  |  .----)   |   |  |_)  ||  |
 | _| `._____| \______/ |_______/       |__|  |_______/    |______/ |__|
-
-[rustsbi] Implementation: RustSBI-QEMU Version 0.0.2
-[rustsbi-dtb] Hart count: cluster0 with 1 cores
-[rustsbi] misa: RV64ACDFIMSU
-[rustsbi] mideleg: ssoft, stimer, sext (0x222)
-[rustsbi] medeleg: ima, ia, bkpt, la, sa, uecall, ipage, lpage, spage (0xb1ab)
-[rustsbi] pmp0: 0x10000000 ..= 0x10001fff (rw-)
-[rustsbi] pmp1: 0x2000000 ..= 0x200ffff (rw-)
-[rustsbi] pmp2: 0xc000000 ..= 0xc3fffff (rw-)
-[rustsbi] pmp3: 0x80000000 ..= 0x8fffffff (rwx)
-[rustsbi] enter supervisor 0x80200000
-[KERN] rust_main() begin
-[KERN] clear_bss() begin
-[KERN] clear_bss() end
-[KERN] mm::init() begin
-[KERN] mm::init_heap() begin
-[KERN] mm::init_heap() end
-[KERN] mm::init_frame_allocator() begin
-[KERN] mm::frame_allocator::lazy_static!FRAME_ALLOCATOR begin
+[rustsbi] Implementation     : RustSBI-QEMU Version 0.2.0-alpha.2
+[rustsbi] Platform Name      : riscv-virtio,qemu
+[rustsbi] Platform SMP       : 1
+[rustsbi] Platform Memory    : 0x80000000..0x88000000
+[rustsbi] Boot HART          : 0
+[rustsbi] Device Tree Region : 0x87e00000..0x87e0107e
+[rustsbi] Firmware Address   : 0x80000000
+[rustsbi] Supervisor Address : 0x80200000
+[rustsbi] pmp01: 0x00000000..0x80000000 (-wr)
+[rustsbi] pmp02: 0x80000000..0x80200000 (---)
+[rustsbi] pmp03: 0x80200000..0x88000000 (xwr)
+[rustsbi] pmp04: 0x88000000..0x00000000 (-wr)
+[kernel] Hello, world!
+power_3 [10000/200000]
+power_3 [20000/200000]
+power_3 [30000/200000]
+power_5 [10000/140000]
+power_5 [20000/140000]
+power_5 [30000/140000]
+power_5 [40000/140000]
+power_5 [50000/140000]
+power_5 [60000/140000]
+power_5 [70000/140000]
+power_7 [10000/160000]
+power_7 [20000/160000]
+power_7 [30000/160000]
+power_7 [40000/160000]
+power_3 [40000/200000]
+power_3 [50000/200000]
+power_3 [60000/200000]
+power_3 [70000/200000]
+power_3 [power_5 [80000/140000]
+power_5 [90000/140000]
+power_5 [100000/140000]
+power_5 [110000/140000]
+power_5 [120000/140000]
+power_5 [130000/140000]
+power_5 [140000/140000]
+5^140000 = 386471875(MOD 998244353)
+Test power_5 OK!
+[kernel] Application exited with code 0
+[task 1 exited. user_time: 10 ms, kernle_time: 9 ms.
+80000/200000]
+power_3 [90000/200000]
+power_3 [100000/200000]
+power_3 [110000/200000]
+power_3 [120000/200000]
+power_3 [130000/200000]
+power_7 [50000/160000]
+power_7 [60000/160000]
+power_7 [70000/160000]
+power_7 [80000/160000]
+power_7 [90000/160000]
+power_7 [100000/power_3 [140000/200000]
+power_3 [150000/200000]
+power_3 [160000/200000]
+power_3 [170000/200000]
+power_3 [180000/200000]
+power_3 [190000/200000]
+power_3 [200000/200000]
+3^200000 = 871008973(MOD 998244353)
+Test power_3 OK!
+[kernel] Application exited with code 0
+[task 0 exited. user_time: 5 ms, kernle_time: 33 ms.
+160000]
+power_7 [110000/160000]
+power_7 [120000/160000]
+power_7 [130000/160000]
+power_7 [140000/160000]
+power_7 [150000/160000]
+power_7 [160000/160000]
+7^160000 = 667897727(MOD 998244353)
+Test power_7 OK!
+[kernel] Application exited with code 0
+[task 2 exited. user_time: 10 ms, kernle_time: 32 ms.
+Test sleep OK!
+[kernel] Application exited with code 0
+[task 3 exited. user_time: 876 ms, kernle_time: 2056 ms.
+All applications completed!
 ......
 ```
 
 ## Rustdoc
-
 Currently it can only help you view the code since only a tiny part of the code has been documented.
 
 You can open a doc html of `os` using `cargo doc --no-deps --open` under `os` directory.
-
-### OS-API-DOCS
-The API Docs for Ten OS
-1. [Lib-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch1/os/index.html)
-1. [Batch-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch2/os/index.html)
-1. [MultiProg-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch3-coop/os/index.html)
-1. [TimeSharing-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch3/os/index.html)
-1. [AddrSpace-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch4/os/index.html)
-1. [Process-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch5/os/index.html)
-1. [FileSystem-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch6/os/index.html)
-1. [IPC-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch7/os/index.html)
-1. [SyncMutex-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch8/os/index.html)
-1. [IODevice-OS API doc](https://learningos.github.io/rCore-Tutorial-v3/ch9/os/index.html)
